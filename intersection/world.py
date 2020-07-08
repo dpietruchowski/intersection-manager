@@ -1,9 +1,8 @@
 from junction import Junction
 from manager import Manager
-from agent import Car
 from PyQt5.QtCore import *
 
-import os, sys, warnings
+import os, sys, warnings, logging
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -13,6 +12,13 @@ else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
 import sumolib
+
+def prevNextIter(iterable):
+    prev = None
+    for curr in iterable:
+        if prev:
+            yield prev, curr
+        prev = curr
 
 class Route:
     def __init__(self, id):
@@ -26,7 +32,24 @@ class Route:
         length = 0
         for edge in self.edges:
             length += edge.length
+        for edge, nextEdge in prevNextIter(self.edges):
+            junction = edge.toJunction
+            lane = junction.getLane(edge.id, nextEdge.id)
+            length += lane.length
         return length
+
+    def getNextJunction(self, edgeId):
+        length = 0
+        for edge, nextEdge in prevNextIter(self.edges):
+            length += edge.length
+            junction = edge.toJunction
+            lane = junction.getLane(edge.id, nextEdge.id)
+            if edge.id == edgeId:
+                return length, lane, junction
+            length += lane.length
+        # probably internal edge = lane
+        return 0, None, None
+
 
 def convertShape(s):
     shape = []
@@ -64,8 +87,7 @@ class World:
             edge = Edge(e.getID(), fromJunction, 
                         toJunction, e.getLength())
             self.edges[e.getID()] = edge
-
-
+            
         for node in net.getNodes():
             junction = self.junctions[node.getID()]
             if not junction:
@@ -73,27 +95,29 @@ class World:
                 continue
 
             lanes = []
-            for lane in node.getInternal():
-                if lane:
-                    lanes.append(lane)
+            for laneID in node.getInternal():
+                if laneID:
+                    lanes.append(laneID)
 
-            for lane in lanes:
+            for laneID in lanes:
                 connection = None
                 for conn in node.getConnections():
-                    if conn.getViaLaneID() == lane:
+                    if conn.getViaLaneID() == laneID:
                         connection = conn
                         break
                 if not connection:
-                    logging.warning("Connection not found for lane " + str(lane))
+                    logging.warning("Connection not found for lane " + str(laneID))
                     continue
-                laneShape = convertShape(net.getLane(lane).getShape())
+                
+                lane = net.getLane(laneID)
+                laneShape = convertShape(lane.getShape())
                 fromEdge = None
                 if connection.getFrom().getID() in self.edges:
                     fromEdge = self.edges[connection.getFrom().getID()]
                 toEdge = None
                 if connection.getTo().getID() in self.edges:
                     toEdge = self.edges[connection.getTo().getID()]
-                junction.addLane(lane, laneShape, fromEdge, toEdge)
+                junction.addLane(laneID, laneShape, lane.getLength(), fromEdge, toEdge)
             
             if lanes:
                 junction.manager = Manager()

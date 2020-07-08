@@ -1,6 +1,6 @@
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-import math
+import math, logging
 
 class Cell(QPoint):
     def __repr__(self):
@@ -82,11 +82,12 @@ class LaneItem:
     
 class Lane:
     distStep = 0.05
-    width = 1
-    length = 2
-    def __init__(self, shape, area, fromEdge, toEdge):
+    carWidth = 1
+    carLength = 2
+    def __init__(self, shape, area, length, fromEdge, toEdge):
         self.shape = shape
         self.area = area
+        self.length = length
         self.cellReg = {}
         self.fromEdge = fromEdge
         self.toEdge = toEdge
@@ -108,11 +109,13 @@ class Lane:
             line = QLineF(self.shape[idx - 1], self.shape[idx])
             while distance < currentLineDist + line.length():
                 t = (distance - currentLineDist) / line.length()
-                polygon = self.getBoundingPolygon(line, t, self.length, self.width)
+                polygon = self.getBoundingPolygon(line, t, self.carLength, self.carWidth)
                 self.cellReg[distNum] = self.area.getCellsOccupied(polygon)
                 distance += self.distStep
                 distNum += 1
             currentLineDist += line.length()
+        if self.length != currentLineDist:
+            logging.warning("Lane length doesn't match")
 
     # 0 < t < 1
     def getBoundingPolygon(self, line, t, length, width):
@@ -135,15 +138,14 @@ class Lane:
             while distance < currentLineDist + line.length():
                 if fdist < distance:
                     t = (fdist - currentLineDist) / line.length()
-                    return self.getBoundingPolygon(line, t, self.length, self.width)
+                    return self.getBoundingPolygon(line, t, self.carLength, self.carWidth)
                 distance += self.distStep
             currentLineDist += line.length()
         return None
                 
 
     def getCells(self, distance):
-        distance = float(distance)
-        idx = int(math.ceil(distance / self.distStep))
+        idx = int(math.floor(float(distance) / self.distStep))
         if idx not in self.cellReg:
             return []
         return self.cellReg[idx]
@@ -169,10 +171,10 @@ class Junction:
     def hasManager(self):
         return self.manager is not None
     
-    def addLane(self, id, shape, fromEdge, toEdge):
+    def addLane(self, id, shape, length, fromEdge, toEdge):
         if id in self.lanes:
             return
-        lane = Lane(shape, self.area, fromEdge, toEdge)
+        lane = Lane(shape, self.area, length, fromEdge, toEdge)
         lane.id = id
         self.lanes[id] = lane
         lane.recalculate()

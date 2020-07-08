@@ -1,6 +1,5 @@
 from intersection.junction import Cell, Lane, Area
 from intersection.world import Edge, World
-from PyQt5.QtCore import *
 
 import unittest
 
@@ -28,7 +27,16 @@ class TestWorld(unittest.TestCase):
     def testRoute(self):
         world = World()
         world.loadNet('configs/test/test.net.xml')
+        world.loadRoutes('configs/test/test.rou.xml')
         self.assertTrue(world.junctions["gneJ1"])
+        self.assertTrue(world.routes['route_0'])
+        self.assertTrue(world.routes['route_1'])
+        self.assertEqual(world.routes['route_0'].getNextJunction('gneE0').id, 'gneJ1')
+        self.assertEqual(world.routes['route_0'].getNextJunction('gneE6').id, 'gneJ8')
+        self.assertEqual(world.routes['route_0'].getNextJunction('gneE4'), None)
+        self.assertEqual(world.routes['route_1'].getNextJunction('gneE4').id, 'gneJ1')
+        self.assertEqual(world.routes['route_1'].getNextJunction('gneE5').id, 'gneJ6')
+        self.assertEqual(world.routes['route_1'].getNextJunction('gneE0'), None)
         pass
 
     

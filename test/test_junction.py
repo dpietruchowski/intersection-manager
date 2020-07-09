@@ -9,7 +9,7 @@ class TestJunction(unittest.TestCase):
         area = Area(QRectF(-5, -5, 10, 10))
         e1 = Edge('e1', None, None, 10)
         e2 = Edge('e2', None, None, 20)
-        lane1 = Lane([QPointF(-5, 0), QPointF(5, 0)], area, e1, e2)
+        lane1 = Lane([QPointF(-5, 0), QPointF(5, 0)], area, 10, e1, e2)
         lane1.recalculate()
 
     

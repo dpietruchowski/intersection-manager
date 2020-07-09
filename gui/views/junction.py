@@ -91,7 +91,7 @@ class JunctionWidget(QWidget):
         if not self.junction.manager:
             return
 
-        cellReg = self.junction.manager.cellReg
+        cell_reg = self.junction.manager.cell_reg
         brush = QBrush(QColor(100,100,100,100))
-        for cell in cellReg.getAllCells(self.time):
-            painter.fillRect(self.junction.area.getCellRect(cell), brush)
+        for cell in cell_reg.get_all_cells(self.time):
+            painter.fillRect(self.junction.area.get_cellRect(cell), brush)

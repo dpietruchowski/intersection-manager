@@ -12,7 +12,7 @@ class CellRegister:
         self.reg = {}
 
     def register(self, time, cell, id):
-        if not self.findCell(time, cell):
+        if not self.find_cell(time, cell):
             item = Item()
             item.cell = cell
             item.id = id
@@ -22,17 +22,17 @@ class CellRegister:
         items = self.reg[time]
         self.reg[time] = [item for item in items if item.id != id]
 
-    def unregisterAll(self, id):
+    def unregister_all(self, id):
         for time in self.reg.keys():
             self.unregister(time, id)
                  
-    def getId(self, time, cell):
-        item = self.findCell(time, cell)
+    def get_id(self, time, cell):
+        item = self.find_cell(time, cell)
         if item:
             return item.id
         return None
 
-    def getAllCells(self, time = None, id = None):
+    def get_all_cells(self, time = None, id = None):
         cells = []
         if time in self.reg:
             for item in self.reg[time]:
@@ -42,7 +42,7 @@ class CellRegister:
                     cells.append(item.cell)
         return cells
 
-    def findCell(self, time, cell):
+    def find_cell(self, time, cell):
         if time in self.reg:
             for item in self.reg[time]:
                 if item.cell == cell:
@@ -51,45 +51,45 @@ class CellRegister:
 
 class Manager:
     def __init__(self):
-        self.cellReg = CellRegister()
+        self.cell_reg = CellRegister()
         self.cars = {}
 
-    def register(self, lane, carId, beginTime, endTime):
+    def register(self, lane, carId, begin_time, end_time):
         if carId in self.cars:
             self.unregister(carId)
 
-        if beginTime >= endTime:
+        if begin_time >= end_time:
             logging.warning('Begin time is greater than end time')
             return
 
-        timeSteps = range(endTime - beginTime)
-        v = float(lane.length) / (endTime - beginTime)
-        distances = [v * time for time in timeSteps]
+        time_steps = range(end_time - begin_time)
+        v = float(lane.length) / (end_time - begin_time)
+        distances = [v * time for time in time_steps]
         
-        for time, distance in izip(timeSteps,distances) :
-            cells = lane.getCells(distance)
+        for time, distance in izip(time_steps, distances) :
+            cells = lane.get_cells(distance)
             if not cells:
                 logging.warning('There is no cells for distance %f' % distance)
                 continue
             for cell in cells:
-                if not not self.cellReg.findCell(time + beginTime, cell):
+                if not not self.cell_reg.find_cell(time + begin_time, cell):
                     logging.warning('Cell is already registered %s' % str(cell))
                     return
 
-        for time, distance in izip(timeSteps,distances):
-            cells = lane.getCells(distance)
+        for time, distance in izip(time_steps,distances):
+            cells = lane.get_cells(distance)
             if not cells:
                 print lane.length
-                print timeSteps
+                print time_steps
                 print distances
                 logging.warning('There is no cells for distance %f' % distance)
                 continue
-            self.cars.setdefault(carId, []).append(time + beginTime)
+            self.cars.setdefault(carId, []).append(time + begin_time)
             for cell in cells:
-                self.cellReg.register(time + beginTime, cell, carId)
+                self.cell_reg.register(time + begin_time, cell, carId)
     
     def unregister(self, carId):
         if not carId in self.cars:
             return
-        self.cellReg.unregisterAll(carId)
+        self.cell_reg.unregister_all(carId)
         del self.cars[carId]

@@ -13,15 +13,15 @@ class TestManager(unittest.TestCase):
         reg.register(0, Cell(2,2), 'car2')
         reg.register(0, Cell(3,3), 'car2')
         reg.register(5, Cell(3,3), 'car2')
-        self.assertEqual(reg.getId(0, Cell(0,0)), 'car1')
-        self.assertEqual(reg.getId(0, Cell(1,1)), 'car2')
-        self.assertEqual(reg.getId(0, Cell(2,2)), 'car2')
-        self.assertEqual(reg.getId(0, Cell(3,3)), 'car2')
-        self.assertEqual(reg.getAllCells(0),
+        self.assertEqual(reg.get_id(0, Cell(0,0)), 'car1')
+        self.assertEqual(reg.get_id(0, Cell(1,1)), 'car2')
+        self.assertEqual(reg.get_id(0, Cell(2,2)), 'car2')
+        self.assertEqual(reg.get_id(0, Cell(3,3)), 'car2')
+        self.assertEqual(reg.get_all_cells(0),
             [Cell(0,0), Cell(1,1), Cell(2,2), Cell(3,3)])
-        self.assertEqual(reg.getAllCells(0, 'car1'),
+        self.assertEqual(reg.get_all_cells(0, 'car1'),
             [Cell(0,0)])
-        self.assertEqual(reg.getAllCells(0, 'car2'),
+        self.assertEqual(reg.get_all_cells(0, 'car2'),
             [Cell(1,1), Cell(2,2), Cell(3,3)])
 
 
@@ -31,12 +31,12 @@ class TestManager(unittest.TestCase):
         reg.register(0, Cell(1,1), 'car2')
         reg.register(0, Cell(2,2), 'car2')
         reg.register(0, Cell(3,3), 'car2')
-        reg.unregisterAll('car1')
-        self.assertEqual(reg.getId(0, Cell(0,0)), None)
-        self.assertEqual(reg.getId(0, Cell(1,1)), 'car2')
-        self.assertEqual(reg.getAllCells(0),
+        reg.unregister_all('car1')
+        self.assertEqual(reg.get_id(0, Cell(0,0)), None)
+        self.assertEqual(reg.get_id(0, Cell(1,1)), 'car2')
+        self.assertEqual(reg.get_all_cells(0),
             [Cell(1,1), Cell(2,2), Cell(3,3)])
-        self.assertEqual(reg.getAllCells(0, 'car1'),
+        self.assertEqual(reg.get_all_cells(0, 'car1'),
             [])
 
 
@@ -52,9 +52,9 @@ class TestManager(unittest.TestCase):
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         manager.unregister('car1')
         self.assertFalse('car1' in manager.cars)
-        self.assertEqual(manager.cellReg.getAllCells(0, 'car1'),
+        self.assertEqual(manager.cell_reg.get_all_cells(0, 'car1'),
             [])
-        self.assertEqual(manager.cellReg.getAllCells(1, 'car1'),
+        self.assertEqual(manager.cell_reg.get_all_cells(1, 'car1'),
             [])
 
         manager.register(lane1, 'car1', 0, 3)

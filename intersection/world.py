@@ -13,7 +13,7 @@ else:
 
 import sumolib
 
-def prevNextIter(iterable):
+def prev_next_iter(iterable):
     prev = None
     for curr in iterable:
         if prev:
@@ -25,67 +25,67 @@ class Route:
         self.id = id
         self.edges = []
 
-    def addEdge(self, edge):
+    def add_edge(self, edge):
         self.edges.append(edge)
 
-    def getLength(self):
+    def get_length(self):
         length = 0
         for edge in self.edges:
             length += edge.length
-        for edge, nextEdge in prevNextIter(self.edges):
-            junction = edge.toJunction
-            lane = junction.getLane(edge.id, nextEdge.id)
+        for edge, next_edge in prev_next_iter(self.edges):
+            junction = edge.to_junction
+            lane = junction.get_lane(edge.id, next_edge.id)
             length += lane.length
         return length
 
-    def getNextJunction(self, edgeId):
+    def get_next_junction(self, edge_id):
         length = 0
-        for edge, nextEdge in prevNextIter(self.edges):
+        for edge, next_edge in prev_next_iter(self.edges):
             length += edge.length
-            junction = edge.toJunction
-            lane = junction.getLane(edge.id, nextEdge.id)
-            if edge.id == edgeId:
+            junction = edge.to_junction
+            lane = junction.get_lane(edge.id, next_edge.id)
+            if edge.id == edge_id:
                 return length, lane, junction
             length += lane.length
         # probably internal edge = lane
         return 0, None, None
 
 
-def convertShape(s):
+def convert_shape(s):
     shape = []
     for x, y in s:
         shape.append(QPointF(x, y))
     return shape
 
 class Edge:
-    def __init__(self, id, fromJunction, toJunction, length):
+    def __init__(self, id, from_junction, to_junction, length):
         self.id = id
-        self.fromJunction = fromJunction
-        self.toJunction = toJunction
+        self.from_junction = from_junction
+        self.to_junction = to_junction
         self.length = length
 
     def __repr__(self):
-        return repr('Edge|' + str(self.id) +'| ' + self.fromJunction.id + '->' + self.toJunction.id)
+        return repr('Edge|' + str(self.id) +'| ' + self.from_junction.id + '->' + self.to_junction.id)
 
 
 class World:
-    def loadNet(self, filename):
+    def load_net(self, filename):
         self.junctions = {}
         self.edges = {}
         net = sumolib.net.readNet(filename, withInternal=True)
 
         for node in net.getNodes():
-            shape = convertShape(node.getShape())
+            shape = convert_shape(node.getShape())
             if not shape:
                 continue
             junction = Junction(node.getID(), shape)
             self.junctions[node.getID()] = junction
 
         for e in net.getEdges(withInternal = False):
-            fromJunction = self.junctions[e.getFromNode().getID()]
-            toJunction = self.junctions[e.getToNode().getID()]
-            edge = Edge(e.getID(), fromJunction, 
-                        toJunction, e.getLength())
+            from_junction = self.junctions[e.getFromNode().getID()]
+            to_junction = self.junctions[e.getToNode().getID()]
+            edge = Edge(e.getID(), from_junction, 
+                        to_junction, e.getLength())
             self.edges[e.getID()] = edge
             
         for node in net.getNodes():
@@ -110,28 +110,28 @@ class World:
                     continue
                 
                 lane = net.getLane(laneID)
-                laneShape = convertShape(lane.getShape())
-                fromEdge = None
+                laneShape = convert_shape(lane.getShape())
+                from_edge = None
                 if connection.getFrom().getID() in self.edges:
-                    fromEdge = self.edges[connection.getFrom().getID()]
-                toEdge = None
+                    from_edge = self.edges[connection.getFrom().getID()]
+                to_edge = None
                 if connection.getTo().getID() in self.edges:
-                    toEdge = self.edges[connection.getTo().getID()]
-                junction.addLane(laneID, laneShape, lane.getLength(), fromEdge, toEdge)
+                    to_edge = self.edges[connection.getTo().getID()]
+                junction.add_lane(laneID, laneShape, lane.getLength(), from_edge, to_edge)
             
             if lanes:
                 junction.manager = Manager()
 
 
-    def loadRoutes(self, filename):
+    def load_routes(self, filename):
         self.routes = {}
         for route in sumolib.output.parse_fast(filename, 'route', ['edges', 'id']):
             print route
             r = Route(route.id)
-            for edgeId in route.edges.split():
-                if edgeId not in self.edges:
-                    logging.warning("Edge not found " + str(edgeId))
+            for edge_id in route.edges.split():
+                if edge_id not in self.edges:
+                    logging.warning("Edge not found " + str(edge_id))
                     continue
-                edge = self.edges[edgeId]
-                r.addEdge(edge)
+                edge = self.edges[edge_id]
+                r.add_edge(edge)
             self.routes[r.id] = r

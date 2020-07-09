@@ -18,8 +18,8 @@ class MainWindow(QMainWindow):
 
     def loadWorld(self, configFilename):
         world = World()
-        world.loadNet(configFilename.replace('.sumocfg', '.net.xml'))
-        world.loadRoutes(configFilename.replace('.sumocfg', '.rou.xml'))
+        world.load_net(configFilename.replace('.sumocfg', '.net.xml'))
+        world.load_routes(configFilename.replace('.sumocfg', '.rou.xml'))
         self.setWorld(world)
 
     def junctionChanged(self):

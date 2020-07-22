@@ -6,8 +6,8 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="/home/damiano/workspace/smart-intersections/new/new.net.xml"/>
-        <route-files value="/home/damiano/workspace/smart-intersections/new/new.rou.xml"/>
+        <net-file value="new.net.xml"/>
+        <route-files value="new.rou.xml"/>
         <gui-settings-file value="new.settings.xml"/>
     </input>
     <processing>

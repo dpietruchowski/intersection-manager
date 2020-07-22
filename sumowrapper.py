@@ -1,4 +1,6 @@
-import os, sys
+import os
+import sys
+import pdb
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -9,21 +11,17 @@ else:
 
 import traci
 
-class Vehicle:
+class Vehicle(object):
     def __init__(self, id_):
         self.id_ = id_
 
     @property
-    def acceleration(self):
+    def accel(self):
         return traci.vehicle.getAcceleration(self.id_)
 
     @property
-    def distance(self):
+    def distance(self): #m
         return traci.vehicle.getDistance(self.id_)
-
-    @property
-    def accel(self):
-        return traci.vehicle.getAccel(self.id_)
 
     @property
     def road_id(self):
@@ -33,25 +31,37 @@ class Vehicle:
     def route_id(self):
         return traci.vehicle.getRouteID(self.id_)
 
-    @accel.setter
-    def accel(self, value):
-        return traci.vehicle.setAccel(self.id_, value)
+    @property
+    def max_accel(self): #m/s^2
+        return traci.vehicle.getAccel(self.id_)
+
+    @max_accel.setter
+    def max_accel(self, value): #m/s^2
+        traci.vehicle.setAccel(self.id_, value)
 
     @property
-    def speed(self):
+    def max_decel(self): #m/s^2
+        return traci.vehicle.getDecel(self.id_)
+
+    @max_decel.setter
+    def max_decel(self, value): #m/s^2
+        traci.vehicle.setDecel(self.id_, value)
+
+    @property
+    def speed(self): #m/s
         return traci.vehicle.getSpeed(self.id_)
 
     @speed.setter
-    def speed(self, value):
-        return traci.vehicle.setSpeed(self.id_, value)
+    def speed(self, value): #m/s
+        traci.vehicle.setSpeed(self.id_, value)
 
     @property
-    def max_speed(self):
+    def max_speed(self): #m/s
         return traci.vehicle.getMaxSpeed(self.id_)
 
     @max_speed.setter
-    def max_speed(self, value):
-        return traci.vehicle.setMaxSpeed(self.id_, value)
+    def max_speed(self, value): #m/s
+        traci.vehicle.setMaxSpeed(self.id_, value)
 
     @property
     def speed_mode(self):
@@ -59,10 +69,10 @@ class Vehicle:
 
     @max_speed.setter
     def speed_mode(self, value):
-        return traci.vehicle.setSpeedMode(self.id_, value)
+        traci.vehicle.setSpeedMode(self.id_, value)
 
 
-class Vehicles:
+class Vehicles(object):
     def __len__(self):
         return traci.vehicle.getIDCount()
 
@@ -76,8 +86,8 @@ class Vehicles:
         return traci.vehicle.getIDList()
 
 
-class Simulation:
-    sumo_binary = 'sumo-gui'
+class Simulation(object):
+    sumo_binary = 'sumo'
     def __init__(self):
         self.step_count = 0
         self.vehicles = Vehicles()
@@ -97,7 +107,5 @@ class Simulation:
         return traci.simulation.getMinExpectedNumber()
 
     @property
-    def time(self):
+    def time(self): #s
         return traci.simulation.getTime()
-
-simulation = Simulation()

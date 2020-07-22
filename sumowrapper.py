@@ -76,7 +76,7 @@ class Vehicles(object):
     def __len__(self):
         return traci.vehicle.getIDCount()
 
-    def __getitem__(self):
+    def __getitem__(self, index):
         if index >= len(self):
             raise IndexError
         return Vehicle(id_list[index])
@@ -87,7 +87,7 @@ class Vehicles(object):
 
 
 class Simulation(object):
-    sumo_binary = 'sumo'
+    sumo_binary = 'sumo-gui'
     def __init__(self):
         self.step_count = 0
         self.vehicles = Vehicles()

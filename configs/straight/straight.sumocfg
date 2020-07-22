@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on pią, 3 kwi 2020, 16:37:49 by Eclipse SUMO GUI Version 1.5.0
+-->
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="straight.net.xml"/>
+        <route-files value="straight.rou.xml"/>
+        <gui-settings-file value="straight.settings.xml"/>
+    </input>
+    <processing>
+        <collision.action value="teleport"/>
+    </processing>
+    <time>
+        <step-length value="0.005"/>
+    </time>
+    <gui_only>
+        <start value="false"/>
+    </gui_only>
+
+</configuration>

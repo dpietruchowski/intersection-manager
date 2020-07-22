@@ -1,4 +1,5 @@
 import os, sys
+from collections import namedtuple
 
 def get_options():
     import optparse
@@ -6,18 +7,19 @@ def get_options():
     opt_parser.add_option('-c', '--cfg', help='config file')
     return opt_parser.parse_args()
 
-from sumowrapper import simulation, Vehicle
-
-import traci
+from sumowrapper import Simulation, Vehicle
 from intersection.agent import Agent
 
+Stats = namedtuple('Stats', ['time', 'distance', 'velocity', 'accel'])
+
 def simulation_loop(configFilename, world):
+    stats = {}
     agents = {}
-    step = 0
+    simulation = Simulation()
     simulation.start(configFilename)
     while simulation.min_expected_number > 0:
         simulation.step()
-        Agent.stepLength = simulation.time / simulation.step_count 
+        Agent.stepLength = simulation.time / simulation.step_count
         
         car_id_list = simulation.vehicles.id_list
         agent_id_list = agents.keys()
@@ -31,8 +33,14 @@ def simulation_loop(configFilename, world):
             del agents[car_id]
         
         for car_id, agent in agents.items():
-            agent.update()
+            agent.update(simulation)
+            stats.setdefault(car_id, []).append(Stats(
+                    time = simulation.time,
+                    distance = agent.vehicle.distance, 
+                    velocity = agent.vehicle.speed,
+                    accel = agent.vehicle.accel))
     simulation.close()
+    return stats
 
 from threading import Thread
 from PyQt5.QtWidgets import QApplication
@@ -46,6 +54,6 @@ if __name__ == "__main__":
     mainWindow.show()
     sim = Thread(target=simulation_loop, args=(options.cfg, mainWindow.world,))
     sim.start()
-    sys.exit(app.exec_())
+    #sys.exit(app.exec_())
 
 

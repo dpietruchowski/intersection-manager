@@ -4,22 +4,90 @@ from collections import namedtuple
 
 MotionPoint = namedtuple('MotionPoint', ['t', 'v', 'd'])
 
-def calc_accel_motion_distance(v_init, v_final, accel):
-    return float(v_final + v_init)*(v_final - v_init) / (2 * accel)
+def accel_distance(v_init, v_final, accel):
+    return abs(float(v_final + v_init)*(v_final - v_init) / (2 * accel))
 
-def calc_accel_motion_time(v_init, v_final, accel):
-    return float(v_final - v_init) / accel
+def accel_time(v_init, v_final, accel):
+    return abs(float(v_final - v_init) / accel)
 
-def calc_accel_motion_distance_time(v_init, v_final, accel):
-    return calc_accel_motion_distance(v_init, v_final, accel), \
-        calc_accel_motion_time(v_init, v_final, accel)
+def motion_factor(velocity, v_final):
+    f = -1 if v_final < velocity else 0 if v_final == velocity else 1
+    return f
 
+def motion_params(velocity, time, v_init, v_final, accel, decel):
+    f1 = motion_factor(velocity, v_init)
+    f2 = motion_factor(velocity, v_final)
+    a2 = decel if f1 == 1 else accel
+    a3 = accel if f2 == 1 else decel
+    t2 = abs(f1) * abs(v_init - velocity) / a2
+    t3 = abs(f2) * abs(v_final - velocity) / a3
+    return f1, f2, a2, a3, t2, t3
 
-def calc_accel_motion_max_distance(time, v_init, v_final, accel, decel):
-    a = (-1.0/2) * (1.0 / accel + 1.0 / decel)
-    b = time + float(v_init) / accel + float(v_final) / decel
-    c = (-1.0/2)*(float(v_init**2) / accel + float(v_final**2) / decel)
-    return (4 * a * c - b**2) / (4 * a)
+def motion_distance(velocity, time, v_init, v_final, accel, decel):
+    f1, f2, a2, a3, t2, t3 = motion_params(velocity, time, v_init, v_final, accel, decel)
+    if t2 + t3 > time:
+        return 0
+    return velocity * time + f1 * ((a2 * t2**2) / 2) + f2 * ((a3 * t3**2) / 2)
+
+def motion_points(velocity, time, v_init, v_final, accel, decel):
+    f1, f2, a2, a3, t2, t3 = motion_params(velocity, time, v_init, v_final, accel, decel)
+    if t2 + t3 > time:
+        return []
+    
+    motion_points = []
+    motion_points.append(MotionPoint(t = 0, v = v_init, d = 0))
+    d = t2 * velocity + f1 * float(a2 * t2**2) / 2 
+    motion_points.append(MotionPoint(t = t2, v = velocity, d = d))
+    d += velocity * (time - (t2 + t3))
+    motion_points.append(MotionPoint(t = time - t3, v = velocity, d = d))
+    d += t3 * velocity + f2 * float(a3 * t3**2) / 2
+    motion_points.append(MotionPoint(t = time, v = v_final, d = d))
+    return motion_points
+
+def max_motion_distance(time, v_init, v_final, accel, decel, f1, f2):
+    accel_1 = decel if f1 == 1 else accel
+    accel_2 = accel if f2 == 1 else decel
+    a = (1.0/2) * (float(f1) / accel_1 + float(f2) / accel_2)
+    b = time - (float(f1 * v_init) / accel_1 + float(f2 * v_final) / accel_2)
+    c = (1.0/2) * (float(f1* v_init**2) / accel_1 + float(f2 * v_final**2) / accel_2)
+    delta = b**2 - 4 * a * c
+    distance  = -delta / (4 * a)
+    velocity = -b / (2 * a)
+    if velocity < 0 or distance < 0:
+        return 0, 0
+    return velocity, distance
+
+def motion_velocity(time, distance, v_init, v_final, accel, decel, f1, f2):
+    accel_1 = decel if f1 == 1 else accel
+    accel_2 = accel if f2 == 1 else decel
+    a = (1.0/2) * (float(f1) / accel_1 + float(f2) / accel_2)
+    b = time - (float(f1 * v_init) / accel_1 + float(f2 * v_final) / accel_2)
+    c = (1.0/2) * (float(f1* v_init**2) / accel_1 + float(f2 * v_final**2) / accel_2) - distance
+
+    if a == 0:
+        return -float(b) / c
+
+    delta = b**2 - 4 * a * c
+
+    if delta < 0:
+        logging.warning("Delta is lower than 0: %f" % delta)
+        return
+    elif delta == 0:
+        return float(-b) / (2 * a)
+
+    sqrtDelta = math.sqrt(delta)
+    v1 = float(-b - sqrtDelta) / (2*a)
+    v2 = float(-b + sqrtDelta) / (2*a)
+
+    d1 = motion_distance(v1, time, v_init, v_final, accel, decel)
+    if abs(d1 - distance) < 0.01 and v1 > 0:
+        return v1
+
+    d2 = motion_distance(v2, time, v_init, v_final, accel, decel)
+    if abs(d2 - distance) < 0.01 and v2 > 0:
+        return v2
+
+    return 0
 
 def calc_accel_motion_fastest_time(distance, v_init, v_final, accel, decel):
     a = (-1.0/2) * (1.0 / accel + 1.0 / decel)
@@ -38,56 +106,6 @@ def calc_accel_motion_fastest_time(distance, v_init, v_final, accel, decel):
     if t2 > 0:
         return t2
 
-
-def calc_motion_points_for_distance(v_init, v_max, v_final, accel, decel, distance):
-    v_final = min(v_final, v_max)
-    accel_dist, accel_time = calc_accel_motion_distance_time(v_init, v_max, accel)
-    decel_dist, decel_time = calc_accel_motion_distance_time(v_final, v_max, decel)
-    points = [MotionPoint(t = 0, v = v_init, d = 0)]
-    if accel_dist + decel_dist > distance:
-        return
-    else:
-        t_max = float(distance - (accel_dist + decel_dist)) / v_max
-        d = accel_dist
-        points.append(MotionPoint(t = accel_time, v = v_max, d = d))
-        d += v_max * t_max
-        points.append(MotionPoint(t = accel_time + t_max, v = v_max, d = d))
-        d += decel_dist
-        points.append(MotionPoint(t = accel_time + t_max + decel_time, v = v_final, d = d))
-
-    return points
-
-def calc_accel_motion_velocity(time, distance, v_init, v_final, accel, decel):
-    a = (-1.0/2) * (1.0 / accel + 1.0 / decel)
-    b = time + float(v_init) / accel + float(v_final) / decel
-    c = (-1.0/2) * (float(v_init**2) / accel + float(v_final**2) / decel + 2 * distance)
-
-    delta = b**2 - 4 * a * c
-
-    if delta < 0:
-        logging.warning("Delta is lower than 0: %f" % delta)
-        return
-    elif delta == 0:
-        return float(-b) / (2 * a)
-
-    sqrtDelta = math.sqrt(delta)
-    v1 = float(-b - sqrtDelta) / (2*a)
-    v2 = float(-b + sqrtDelta) / (2*a)
-
-    # check first solution
-    t_accel = calc_accel_motion_time(v_init, v1, accel)
-    t_decel = calc_accel_motion_time(v_final, v1, decel)
-    if t_accel + t_decel < time:
-        return v1
-
-    # check second solution
-    t_accel = calc_accel_motion_time(v_init, v2, accel)
-    t_decel = calc_accel_motion_time(v_final, v2, decel)
-    if t_accel + t_decel < time:
-        return v2
-
-
-
 class Motion:
     def __init__(self, v_init, v_final, accel, decel):
         self.v_init = v_init
@@ -95,26 +113,43 @@ class Motion:
         self.accel = accel
         self.decel = decel
 
-    def calc_accel_distance_time(self, v_max):
-        return calc_accel_motion_distance_time(self.v_init, v_max, self.accel)
+    def calc_accel_distance_time(self, velocity):
+        return accel_distance(self.v_init, velocity, self.accel), accel_time(self.v_init, velocity, self.accel)
 
-    def calc_decel_distance_time(self, v_max):
-        return calc_accel_motion_distance_time(self.v_final, v_max, self.decel)
+    def calc_decel_distance_time(self, velocity):
+        return accel_distance(self.v_final, velocity, self.decel), accel_time(self.v_final, velocity, self.decel)
 
-    def calc_motion_points(self, distance, v_max):
-        return calc_motion_points_for_distance(self.v_init , v_max, self.v_final, 
-                self.accel, self.decel, distance)
+    def calc_motion_points(self, velocity, time):
+        return motion_points(velocity, time,
+            self.v_init, self.v_final, self.accel, self.decel)
 
     def calc_velocity(self, time, distance):
-        return calc_accel_motion_velocity(time, distance, self.v_init, self.v_final, 
-                self.accel, self.decel)
+        d1 = motion_distance(self.v_init, time, self.v_init, self.v_final, self.accel, self.decel)
+        d2 = motion_distance(self.v_final, time, self.v_init, self.v_final, self.accel, self.decel)
+        if 0 < distance < d1:
+            return motion_velocity(time, distance, self.v_init, self.v_final, self.accel, self.decel, 1, 1)
+        elif d1 <= distance <= d2:
+            f1 = -1 if self.v_init < self.v_final else 1
+            f2 = 1 if self.v_init < self.v_final else -1
+            return motion_velocity(time, distance, self.v_init, self.v_final, self.accel, self.decel, f1, f2)
+        elif d2 < distance:
+            return motion_velocity(time, distance, self.v_init, self.v_final, self.accel, self.decel, -1, -1)
+        return 0
 
-    def calc_max_distance(self, time):
-        return calc_accel_motion_max_distance(time, self.v_init, self.v_final, self.accel, self.decel)
+    def calc_max_distance(self, time, v_max):
+        v1, d1 = max_motion_distance(time, self.v_init, self.v_final, self.accel, self.decel, -1, -1)
 
-    def calc_min_velocity_for_distance(self, time):
-        distance = self.calc_max_distance(time)
-        return self.calc_velocity(time, distance)
+        d_accel, t_accel = self.calc_accel_distance_time(v1)
+        d_decel, t_decel = self.calc_decel_distance_time(v1)
+        if t_accel + t_decel < time:
+            return min(v_max, v1)
 
-    def calc_fastest_time(self, distance):
-        return calc_accel_motion_fastest_time(distance, self.v_init, self.v_final, self.accel, self.decel)
+        v = max(self.v_final, self.v_init)
+        d_max = motion_distance(v, time, self.v_init, self.v_final, self.accel, self.decel)
+        if d_max > 0:
+            return d_max
+
+        v = min(self.v_final, self.v_init)
+        d_max = motion_distance(v, time, self.v_init, self.v_final, self.accel, self.decel)
+        
+        return d_max

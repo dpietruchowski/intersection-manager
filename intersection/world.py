@@ -69,6 +69,9 @@ class Edge:
 
 
 class World:
+    def __init__(self):
+        self.agents = {}
+
     def load_net(self, filename):
         self.junctions = {}
         self.edges = {}

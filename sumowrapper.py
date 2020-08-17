@@ -71,6 +71,10 @@ class Vehicle(object):
     def speed_mode(self, value):
         traci.vehicle.setSpeedMode(self.id_, value)
 
+    @property
+    def length(self):
+        return traci.vehicle.getLength(self.id_)
+
 
 class Vehicles(object):
     def __len__(self):
@@ -90,6 +94,7 @@ class Simulation(object):
     sumo_binary = 'sumo-gui'
     def __init__(self):
         self.step_count = 0
+        self.stats = {}
         self.vehicles = Vehicles()
 
     def start(self, configFilename):

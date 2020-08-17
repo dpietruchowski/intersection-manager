@@ -34,7 +34,7 @@ class MyPlot(FigureCanvasQTAgg):
         f = get_function(time, distance, v_init, v_final, accel, decel, f1, f2)
         x = []
         y = []
-        for i in numpy.arange(-50, 50, 1):
+        for i in numpy.arange(v_init-50, v_final+50, 1):
             x.append(i)
             y.append(f(i))
         self.vp.cla()

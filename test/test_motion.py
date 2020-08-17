@@ -47,10 +47,62 @@ class TestMotion(unittest.TestCase):
         motion = Motion(v_init = 10, v_final = 30, 
                 accel = 10, decel = 5)
 
-        distance = motion.calc_max_distance(time = 25, v_max = 100)
+        distance = motion.calc_distance(time = 25, velocity = 100)
         velocity = motion.calc_velocity(time = 25, distance = distance)
         self.assertNear(distance, 1605, 0.01)
         self.assertNear(velocity, 100, 0.01)
+
+    def test_params(self):
+        motion = Motion(v_init = 10, v_final = 30, 
+                accel = 10, decel = 5)
+        f1, f2, a1, a2, t1, t2 = motion.calc_params(velocity = 5)
+        self.assertEqual(f1, 1)
+        self.assertEqual(f2, 1)
+        self.assertEqual(a1, 5)
+        self.assertEqual(a2, 10)
+        f1, f2, a1, a2, t1, t2 = motion.calc_params(velocity = 10)
+        self.assertEqual(f1, 0)
+        self.assertEqual(f2, 1)
+        self.assertEqual(a1, 0)
+        self.assertEqual(a2, 10)
+        f1, f2, a1, a2, t1, t2 = motion.calc_params(velocity = 20)
+        self.assertEqual(f1, -1)
+        self.assertEqual(f2, 1)
+        self.assertEqual(a1, 10)
+        self.assertEqual(a2, 10)
+        f1, f2, a1, a2, t1, t2 = motion.calc_params(velocity = 30)
+        self.assertEqual(f1, -1)
+        self.assertEqual(f2, 0)
+        self.assertEqual(a1, 10)
+        self.assertEqual(a2, 0)
+        f1, f2, a1, a2, t1, t2 = motion.calc_params(velocity = 40)
+        self.assertEqual(f1, -1)
+        self.assertEqual(f2, -1)
+        self.assertEqual(a1, 10)
+        self.assertEqual(a2, 5)
+
+    def test_motion(self):
+        motion = Motion(v_init = 10, v_final = 30, 
+                accel = 10, decel = 5)
+
+        distance = motion.calc_distance(velocity = 40, time = 10)
+        time = motion.calc_time(velocity = 40, distance = distance)
+        self.assertNear(time, 10)
+        # time is equal than accel + decel time
+        distance = motion.calc_distance(velocity = 40, time = 5)
+        time = motion.calc_time(velocity = 40, distance = distance)
+        self.assertNear(time, 5)
+        # time is lower than accel and decel time
+        distance = motion.calc_distance(velocity = 40, time = 3)
+        self.assertNear(distance, 0)
+        time = motion.calc_time(velocity = 40, distance = 100)
+        self.assertNear(time, 3.82)
+        velocity = motion.calc_velocity(distance = 100, time = time)
+        self.assertNear(velocity, 36.06)
+        distance = motion.calc_distance(velocity = velocity, time = time)
+        self.assertNear(distance, 100)
+
+    def test_velocity(self):
 '''
     def test_motion_fastest_time(self):
         motion = Motion(v_init = 10, v_final = 30, 

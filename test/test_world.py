@@ -37,7 +37,6 @@ class TestWorld(unittest.TestCase):
         self.assertEqual(world.routes['route_1'].get_next_junction('gneE4')[2].id, 'gneJ1')
         self.assertEqual(world.routes['route_1'].get_next_junction('gneE5')[2], None)
         self.assertEqual(world.routes['route_1'].get_next_junction('gneE0')[2], None)
-        pass
 
     
 if __name__ == "__main__":

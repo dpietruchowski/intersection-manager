@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on nie, 3 maj 2020, 20:32:33 by Eclipse SUMO netedit Version 1.5.0
+<!-- generated on śro, 12 sie 2020, 21:34:09 by Eclipse SUMO netedit Version 1.5.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="/home/damiano/workspace/smart-intersections/new/new.net.xml"/>
+        <sumo-net-file value="/home/damiano/workspace/intersection-manager/configs/new/new.net.xml"/>
     </input>
 
     <output>
-        <output-file value="/home/damiano/workspace/smart-intersections/new/new.net.xml"/>
+        <output-file value="/home/damiano/workspace/intersection-manager/configs/new/new.net.xml"/>
     </output>
 
     <processing>
@@ -30,7 +30,7 @@
     </pedestrian>
 
     <netedit>
-        <route-files value="/home/damiano/workspace/smart-intersections/new/new.rou.xml"/>
+        <route-files value="/home/damiano/workspace/intersection-manager/configs/new/new.rou.xml"/>
     </netedit>
 
     <report>
@@ -43,5 +43,6 @@
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <route edges="gneE0 gneE6" color="yellow" id="route_0"/>
     <route edges="gneE4 gneE5" color="yellow" id="route_1"/>
-    <vehicle id="vehicle_0" depart="0.00" route="route_0"/>
+    <flow id="vehicle_0" begin="0.00" route="route_0" vehsPerHour="3600.00"/>
+    <flow id="vehicle_1" begin="0.00" route="route_1" vehsPerHour="600.00"/>
 </routes>

@@ -50,18 +50,12 @@ class CellRegister:
         return None
 
 class Manager:
+    time_step = 3
     def __init__(self):
         self.cell_reg = CellRegister()
         self.cars = {}
 
-    def register(self, lane, carId, begin_time, end_time):
-        if carId in self.cars:
-            self.unregister(carId)
-
-        if begin_time >= end_time:
-            logging.warning('Begin time is greater than end time')
-            return
-
+    def can_register(self, lane, begin_time, end_time):
         time_steps = range(end_time - begin_time)
         v = float(lane.length) / (end_time - begin_time)
         distances = [v * time for time in time_steps]
@@ -73,20 +67,36 @@ class Manager:
                 continue
             for cell in cells:
                 if not not self.cell_reg.find_cell(time + begin_time, cell):
-                    logging.warning('Cell is already registered %s' % str(cell))
-                    return
+                    logging.debug('Cell is already registered %s' % str(cell))
+                    return False
 
-        for time, distance in izip(time_steps,distances):
+        return True
+
+    def register(self, lane, carId, begin_time, end_time):
+        if carId in self.cars:
+            self.unregister(carId)
+
+        if begin_time >= end_time:
+            logging.warning('Begin time is greater than end time')
+            return
+        
+        while not self.can_register(lane, begin_time, end_time):
+            begin_time += self.time_step
+            end_time += self.time_step
+
+        time_steps = range(end_time - begin_time)
+        v = float(lane.length) / (end_time - begin_time)
+        distances = [v * time for time in time_steps]
+        for time, distance in izip(time_steps, distances):
             cells = lane.get_cells(distance)
             if not cells:
-                print lane.length
-                print time_steps
-                print distances
                 logging.warning('There is no cells for distance %f' % distance)
                 continue
             self.cars.setdefault(carId, []).append(time + begin_time)
             for cell in cells:
                 self.cell_reg.register(time + begin_time, cell, carId)
+
+        return (begin_time, end_time)
     
     def unregister(self, carId):
         if not carId in self.cars:

@@ -25,29 +25,45 @@ class JunctionView(QWidget):
         self.setLayout(mainLayout)
 
         self.spinBoxTime.valueChanged.connect(self.onTimeChanged)
+        self.carListWidget.currentRowChanged.connect(self.onCarChanged)
 
     def setJunctionsComboBox(self, junctionIds):
         self.comboBoxJunctions.clear()
         for id in junctionIds:
             self.comboBoxJunctions.addItem(id)
 
-    def setCarsListWidget(self, carIds):
-        self.carListWidget.clear()
-        for id in carIds:
-            self.carListWidget.addItem(id)
-        for idx in range(self.carListWidget.count()):
-             item = self.carListWidget.item(idx)
-             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-
-
     def setJunction(self, junction):
         self.junctionWidget.junction = junction
-        self.setCarsListWidget(['car1', 'car2', 'car3'])
         self.junctionWidget.update()
 
     def onTimeChanged(self):
         self.junctionWidget.time = self.spinBoxTime.value()
         self.junctionWidget.update()
+
+    def onCarChanged(self):
+        item = self.carListWidget.currentItem()
+        agent = self.world.agents[item.text()]
+        if not agent:
+            return
+        junction, lane, distance = agent.next_reg_point 
+        if not junction:
+            return
+        registration_point, motion_points, arrival_point = agent.junctions[junction.id]
+        arrival_time = int(arrival_point.t / agent.step_length)
+        self.spinBoxTime.setValue(arrival_time)
+
+
+    def add_agent(self, agent_id):
+        item = QListWidgetItem(str(agent_id))
+        #item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsUserCheckable)
+        #item.setCheckState(Qt.Unchecked)
+        self.carListWidget.addItem(item)
+
+    def delete_agent(self, agent_id):
+        items = self.carListWidget.findItems(agent_id, Qt.MatchExactly)
+        if not items: return     
+        for item in items:
+            self.carListWidget.takeItem(self.carListWidget.row(item))
 
 
 class JunctionWidget(QWidget):

@@ -82,8 +82,8 @@ class LaneItem:
     
 class Lane:
     dist_step = 0.05
-    car_width = 1
-    car_length = 2
+    car_width = 2
+    car_length = 5.5
     def __init__(self, shape, area, length, from_edge, to_edge):
         self.shape = shape
         self.area = area

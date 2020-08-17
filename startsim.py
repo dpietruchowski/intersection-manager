@@ -1,4 +1,4 @@
-import os, sys, logging
+import os, sys, logging, time
 from collections import namedtuple
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -10,7 +10,7 @@ def get_options():
     opt_parser.add_option('-c', '--cfg', help='config file')
     return opt_parser.parse_args()
 
-from sumowrapper import Simulation, Vehicle
+from sumowrapper import Simulation, Vehicle, State
 from intersection.agent import Agent
 
 Stats = namedtuple('Stats', ['time', 'distance', 'velocity', 'accel'])
@@ -18,8 +18,11 @@ Stats = namedtuple('Stats', ['time', 'distance', 'velocity', 'accel'])
 def simulation_loop(configFilename, world, main_frame):
     simulation = Simulation()
     simulation.start(configFilename)
+    simulation.state
     first_time = True
-    while simulation.min_expected_number > 0:
+    while simulation.min_expected_number > 0 and simulation.state != State.STOPPED:
+        while simulation.state == State.PAUSED:
+            time.sleep(0.5)
         simulation.step()
         Agent.step_length = simulation.time / simulation.step_count
         if first_time:
@@ -62,12 +65,12 @@ from gui.app import MainWindow
 if __name__ == "__main__":
     (options, args) = get_options()
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.WARNING)
     fh = logging.FileHandler('log.txt')
     fh.setLevel(logging.WARNING)
-    logger.addHandler(fh)
+    #logger.addHandler(fh)
     app = QApplication(sys.argv)
-    Simulation.sumo_binary = 'sumo-gui'
+    Simulation.sumo_binary = 'sumo'
     mainWindow = MainWindow()
     mainWindow.loadWorld(options.cfg)
     mainWindow.show()

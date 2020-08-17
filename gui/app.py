@@ -11,10 +11,15 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.centralWidget)
         self.toolBar = QToolBar(self)
         self.addToolBar(self.toolBar)
-        action = self.toolBar.addAction('<')
+        action = self.toolBar.addAction('{')
         action.triggered.connect(self.prevView)
-        action = self.toolBar.addAction('>')
+        action = self.toolBar.addAction('}')
         action.triggered.connect(self.nextView)
+        self.toolBar.addSeparator()
+        action = self.toolBar.addAction('>')
+        action.triggered.connect(self.resume)
+        action = self.toolBar.addAction('||')
+        action.triggered.connect(self.pause)
         self.carView = CarView(self)
         self.centralWidget.addWidget(self.carView)
         self.junctionView = JunctionView(self)
@@ -61,6 +66,15 @@ class MainWindow(QMainWindow):
         for agent_id in agent_list:
             self.carView.delete_agent(agent_id)
             self.junctionView.delete_agent(agent_id)
+    
+    def resume(self):
+        self.simulation.resume()
+
+    def pause(self):
+        self.simulation.pause()
+
+    def closeEvent(self, event):
+        self.simulation.stop()
 
 if __name__ == "__main__":
     import sys

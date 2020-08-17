@@ -105,8 +105,9 @@ class Agent:
             distance, lane, junction = self.next_reg_point.distance, self.next_reg_point.lane, self.next_reg_point.junction
             if junction and junction.id in self.junctions:
                 arrival_point = self.junctions[junction.id].arrival_point
-                if abs(arrival_point.t - simulation.time) > 0.01:
-                    logging.warning('[%s] Car is in wrong time on the intersection' % (self.vehicle.id_))
+                time_diff = arrival_point.t - simulation.time
+                if abs(time_diff) > 0.01:
+                    logging.warning('[%s] Car is in wrong time on the intersection Diff: %f' % (self.vehicle.id_, time_diff))
             distance, lane, junction = self.route.get_next_junction(self.vehicle.road_id)
             self.next_reg_point = NextRegPoint(junction=junction, lane=lane, distance=distance)
         distance, lane, junction = self.next_reg_point.distance, self.next_reg_point.lane, self.next_reg_point.junction

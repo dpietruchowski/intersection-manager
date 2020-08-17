@@ -2,6 +2,8 @@ import os
 import sys
 import pdb
 
+from enum import Enum
+
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
     print(os.environ['SUMO_HOME'])
@@ -89,16 +91,32 @@ class Vehicles(object):
     def id_list(self):
         return traci.vehicle.getIDList()
 
+class State(Enum):
+    CREATED = 1
+    STARTED = 2
+    PAUSED = 3
+    STOPPED = 4
 
 class Simulation(object):
     sumo_binary = 'sumo-gui'
     def __init__(self):
         self.step_count = 0
+        self.state = State.CREATED
         self.stats = {}
         self.vehicles = Vehicles()
 
     def start(self, configFilename):
+        self.state = State.STARTED
         traci.start([self.sumo_binary, '-c', configFilename])
+
+    def resume(self):
+        self.state = State.STARTED
+
+    def pause(self):
+        self.state = State.PAUSED
+
+    def stop(self):
+        self.state = State.STOPPED
 
     def step(self):
         traci.simulationStep()

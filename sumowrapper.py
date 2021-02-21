@@ -77,6 +77,14 @@ class Vehicle(object):
     def length(self):
         return traci.vehicle.getLength(self.id_)
 
+    @property
+    def front_distance(self):
+        return self.distance + self.length
+
+    @property
+    def back_distance(self):
+        return self.distance
+
 
 class Vehicles(object):
     def __len__(self):

@@ -50,6 +50,19 @@ class Route:
         # probably internal edge = lane
         return 0, None, None
 
+    #not tested
+    def get_next_junction_for_dist(self, distance):
+        length = 0
+        for edge, next_edge in prev_next_iter(self.edges):
+            length += edge.length
+            junction = edge.to_junction
+            lane = junction.get_lane(edge.id, next_edge.id)
+            if length > distance:
+                return length, lane, junction
+            length += lane.length
+        # probably internal edge = lane
+        return 0, None, None
+
 
 def convert_shape(s):
     shape = []
@@ -77,6 +90,11 @@ class World:
         self.edges = {}
         net = sumolib.net.readNet(filename, withInternal=True)
 
+        mergelanes = {}
+        for mergelane in sumolib.output.parse_fast(filename, 'mergelane', ['id', 'lanes']):
+            for lane in mergelane.lanes.split():
+                mergelanes.setdefault(mergelane.id, []).append(lane)
+
         for node in net.getNodes():
             shape = convert_shape(node.getShape())
             if not shape:
@@ -90,46 +108,50 @@ class World:
             edge = Edge(e.getID(), from_junction, 
                         to_junction, e.getLength())
             self.edges[e.getID()] = edge
-            
-        for node in net.getNodes():
-            junction = self.junctions[node.getID()]
-            if not junction:
-                logging.warning("Junction not found " + str(node.getID()))
-                continue
 
+    
+        for id_, junction in self.junctions.items():
+            node = net.getNode(id_)
+            connections = [c for c in node.getConnections() if c.getFrom().getID() in self.edges and c.getTo().getID() in self.edges]
             lanes = []
             for laneID in node.getInternal():
                 if laneID:
                     lanes.append(laneID)
 
-            for laneID in lanes:
-                connection = None
-                for conn in node.getConnections():
-                    if conn.getViaLaneID() == laneID:
-                        connection = conn
-                        break
-                if not connection:
-                    logging.warning("Connection not found for lane " + str(laneID))
+            for connection in connections:
+                from_edge = self.edges.get(connection.getFrom().getID(), None)
+                to_edge = self.edges.get(connection.getTo().getID(), None)
+                lane = None
+                laneShape = None
+                laneLength = 0
+                if connection.getViaLaneID() in lanes:
+                    lane = net.getLane(connection.getViaLaneID())
+                    laneShape = convert_shape(lane.getShape())
+                    laneLength = lane.getLength()
+                elif connection.getViaLaneID() in mergelanes:
+                    mergelane = mergelanes[connection.getViaLaneID()]
+                    lane_id = next((l for l in mergelane if l in lanes), None)
+                    lane = net.getLane(lane_id)
+                    laneLength = lane.getLength()
+                    shape = net.getLane(connection.getViaLaneID()).getShape()
+                    for lane_id in mergelane:
+                        shape.extend(net.getLane(lane_id).getShape())
+                        laneLength += net.getLane(lane_id).getLength()
+                    laneShape = convert_shape(shape)
+
+                if not lane or not laneShape:
                     continue
-                
-                lane = net.getLane(laneID)
-                laneShape = convert_shape(lane.getShape())
-                from_edge = None
-                if connection.getFrom().getID() in self.edges:
-                    from_edge = self.edges[connection.getFrom().getID()]
-                to_edge = None
-                if connection.getTo().getID() in self.edges:
-                    to_edge = self.edges[connection.getTo().getID()]
-                junction.add_lane(laneID, laneShape, lane.getLength(), from_edge, to_edge)
+                junction.add_lane(lane.getID(), laneShape, laneLength, from_edge, to_edge)
             
             if lanes:
                 junction.manager = Manager()
+            else:
+                del self.junctions[id_]
 
 
     def load_routes(self, filename):
         self.routes = {}
         for route in sumolib.output.parse_fast(filename, 'route', ['edges', 'id']):
-            print route
             r = Route(route.id)
             for edge_id in route.edges.split():
                 if edge_id not in self.edges:

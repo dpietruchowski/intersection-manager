@@ -20,6 +20,8 @@ class MainWindow(QMainWindow):
         action.triggered.connect(self.resume)
         action = self.toolBar.addAction('||')
         action.triggered.connect(self.pause)
+        action = self.toolBar.addAction('|_|')
+        action.triggered.connect(self.stop)
         self.carView = CarView(self)
         self.centralWidget.addWidget(self.carView)
         self.junctionView = JunctionView(self)
@@ -73,8 +75,11 @@ class MainWindow(QMainWindow):
     def pause(self):
         self.simulation.pause()
 
-    def closeEvent(self, event):
+    def stop(self):
         self.simulation.stop()
+
+    def closeEvent(self, event):
+        self.stop()
 
 if __name__ == "__main__":
     import sys

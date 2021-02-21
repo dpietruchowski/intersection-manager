@@ -7,7 +7,7 @@ class JunctionView(QWidget):
         super(QWidget, self).__init__(parent)
         self.comboBoxJunctions = QComboBox()
         self.spinBoxTime = QSpinBox()
-        self.spinBoxTime.setRange(0, 10000)
+        self.spinBoxTime.setRange(0, 10000000)
         self.junctionWidget = JunctionWidget()
         self.carListWidget = QListWidget()
 
@@ -45,10 +45,11 @@ class JunctionView(QWidget):
         agent = self.world.agents[item.text()]
         if not agent:
             return
+        self.junctionWidget.agent = agent
         junction, lane, distance = agent.next_reg_point 
         if not junction:
             return
-        registration_point, motion_points, arrival_point = agent.junctions[junction.id]
+        registration_point, arrival_point = agent.junctions[junction.id]
         arrival_time = int(arrival_point.t / agent.step_length)
         self.spinBoxTime.setValue(arrival_time)
 
@@ -70,6 +71,7 @@ class JunctionWidget(QWidget):
     def __init__(self, parent = None):
         super(QWidget, self).__init__(parent)
         self.junction = None
+        self.agent = None
         self.time = 0
         self.setMinimumSize(500, 500)
 
@@ -104,10 +106,23 @@ class JunctionWidget(QWidget):
 
     def draw(self, painter):
         self.junction.draw(painter)
-        if not self.junction.manager:
-            return
+        if self.junction.manager:
+            manager = self.junction.manager
+            brush = QBrush(QColor(100,100,100,100))
+            for cell in self.junction.area.range():
+                if manager.is_cell_registered(self.time, cell):
+                    painter.fillRect(self.junction.area.get_cellRect(cell), brush)
 
-        cell_reg = self.junction.manager.cell_reg
-        brush = QBrush(QColor(100,100,100,100))
-        for cell in cell_reg.get_all_cells(self.time):
-            painter.fillRect(self.junction.area.get_cellRect(cell), brush)
+        if not self.agent or not self.agent.curr_junction_point:
+            return
+        junction, lane, distance = self.agent.curr_junction_point 
+        if not junction or junction != self.junction: 
+            return
+        car_distance = self.agent.prev_state.distance - distance
+        car_distance += self.agent.prev_state.length/2
+        if car_distance > -self.agent.prev_state.length/2:
+            polygon = lane.get_bounding_polygon_for_dist(car_distance)
+            if polygon:
+                painter.save()
+                painter.drawPolygon(polygon)
+                painter.restore()

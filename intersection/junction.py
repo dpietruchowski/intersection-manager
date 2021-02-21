@@ -6,9 +6,11 @@ class Cell(QPoint):
     def __repr__(self):
         return repr('Cell(' + str(self.x()) + ', ' + str(self.y()) + ')')
 
+    @property
     def row(self):
         return self.y()
     
+    @property
     def col(self):
         return self.x()
 
@@ -19,7 +21,7 @@ class Area:
         self.rect = self.shape.boundingRect()
 
     def get_cellRect(self, cell):
-        rect = QRectF(cell.col() * self.cell_size, cell.row() * self.cell_size, self.cell_size, self.cell_size)
+        rect = QRectF(cell.col * self.cell_size, cell.row * self.cell_size, self.cell_size, self.cell_size)
         rect.translate(self.rect.x(), self.rect.y())
         return rect
 
@@ -34,17 +36,17 @@ class Area:
         return [Cell(j, i) for i in self.range_row() for j in self.range_col()]
         
     def range_row(self):
-        return range(self.min().row(), self.max().row())
+        return range(self.min().row, self.max().row)
     
     def range_col(self):
-        return range(self.min().col(), self.max().col())
+        return range(self.min().col, self.max().col)
 
     def get_cell(self, point):
         point -= self.rect.topLeft()
         x = math.ceil(point.x() / self.cell_size) - 1
         y = math.ceil(point.y() / self.cell_size) - 1
-        col = min(max(self.min().col(), x), self.max().col() - 1)
-        row = min(max(self.min().row(), y), self.max().row() - 1)
+        col = min(max(self.min().col, x), self.max().col - 1)
+        row = min(max(self.min().row, y), self.max().row - 1)
         return Cell(col, row)
 
     def get_cells_occupied(self, polygon):
@@ -54,9 +56,10 @@ class Area:
         topLeft = self.get_cell(rect.topLeft())
         botRight = self.get_cell(rect.bottomRight())
         cells = []
-        for col in range(topLeft.col(), botRight.col() + 1):
-            for row in range(topLeft.row(), botRight.row() + 1):
-                cells.append(Cell(col, row))
+        for col in range(topLeft.col, botRight.col + 1):
+            for row in range(topLeft.row, botRight.row + 1):
+                cells.append(col)
+                cells.append(row)
         return cells
 
         '''retCells = []
@@ -83,7 +86,7 @@ class LaneItem:
 class Lane:
     dist_step = 0.05
     car_width = 2
-    car_length = 5.5
+    car_length = 6.5
     def __init__(self, shape, area, length, from_edge, to_edge):
         self.shape = shape
         self.area = area
@@ -102,20 +105,34 @@ class Lane:
 
     def recalculate(self):
         self.cell_reg = {}
-        distance = 0
+        distance = -self.car_length/2
         current_line_dist = 0
         dist_num = 0
         for idx in range(1, len(self.shape)):
+            additional_length = 0
+            if idx == len(self.shape) - 1:
+                additional_length = self.car_length/2
             line = QLineF(self.shape[idx - 1], self.shape[idx])
-            while distance < current_line_dist + line.length():
+            while distance < current_line_dist + line.length() + additional_length:
                 t = (distance - current_line_dist) / line.length()
                 polygon = self.get_bounding_polygon(line, t, self.car_length, self.car_width)
                 self.cell_reg[dist_num] = self.area.get_cells_occupied(polygon)
                 distance += self.dist_step
                 dist_num += 1
             current_line_dist += line.length()
-        if self.length != current_line_dist:
-            logging.warning("Lane length doesn't match")
+        if abs(self.length - current_line_dist) > 0.01:
+            logging.warning("Lane length doesn't match %f %f" % (self.length, current_line_dist))
+
+    def get_bounding_polygon_for_dist(self, distance):
+        current_line_dist = 0
+        for idx in range(1, len(self.shape)):
+            line = QLineF(self.shape[idx - 1], self.shape[idx])
+            if line.length() <= 0:
+                continue
+            t = (distance - current_line_dist) / line.length()
+            if t <= 1.0 and t >= 0.0:
+                return self.get_bounding_polygon(line, t, self.car_length, self.car_width)
+            current_line_dist += line.length()
 
     # 0 < t < 1
     def get_bounding_polygon(self, line, t, length, width):
@@ -128,6 +145,13 @@ class Lane:
         p1 = line.pointAt(t)
         polygon.translate(p1.x(), p1.y())
         return polygon
+
+    def get_bounding_polygon_points(self, line, t, length, width):
+        polygon = self.get_bounding_polygon(line, t, length, width)
+        return [polygon.point(0).x(), polygon.point(0).y(),
+                polygon.point(1).x(), polygon.point(1).y(),
+                polygon.point(2).x(), polygon.point(2).y(),
+                polygon.point(3).x(), polygon.point(3).y()]
 
     def get_car_polygon(self, fdist):
         distance = 0
@@ -144,11 +168,20 @@ class Lane:
         return None
                 
 
-    def get_cells(self, distance):
+    def get_cells_(self, distance):
         idx = int(math.floor(float(distance) / self.dist_step))
         if idx not in self.cell_reg:
             return []
         return self.cell_reg[idx]
+
+    def get_cells(self, distance):
+        cells_ = self.get_cells_(distance)
+        cells = []
+        for i in range(0, len(cells_), 2):
+            col = cells_[i]
+            row = cells_[i+1]
+            cells.append(Cell(col, row))
+        return cells
 
     def draw(self, painter):
         pen = painter.pen()
@@ -167,6 +200,7 @@ class Junction:
         self.area = Area(areaShape)
         self.lanes = {}
         self.manager = None
+        self.v_max = 20
 
     def has_manager(self):
         return self.manager is not None

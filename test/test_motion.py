@@ -103,6 +103,8 @@ class TestMotion(unittest.TestCase):
         self.assertNear(distance, 100)
 
     def test_velocity(self):
+        motion = Motion(v_init = 10, v_final = 30, 
+                accel = 10, decel = 5)
 '''
     def test_motion_fastest_time(self):
         motion = Motion(v_init = 10, v_final = 30, 

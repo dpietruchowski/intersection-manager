@@ -11,7 +11,9 @@
         <gui-settings-file value="new.settings.xml"/>
     </input>
     <processing>
-        <collision.action value="teleport"/>
+        <collision.action value="warn"/>
+        <collision.check-junctions value="true"/>
+        <collision.mingap-factor value="-1"/>
     </processing>
     <time>
         <step-length value="0.005"/>
